@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beste Köken Studio | GIS Danışmanlık</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #F5F3EE;
+            color: #1F2523;
+            min-height: 100vh;
+        }
+        header {
+            background: #1F2523;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { color: #F5F3EE; font-size: 1.4rem; }
+        header span { color: #5F756A; font-size: 0.85rem; }
+        .container {
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+        .hero { text-align: center; margin-bottom: 40px; }
+        .hero h2 { font-size: 2rem; margin-bottom: 10px; }
+        .hero p { color: #5F756A; font-size: 1.1rem; }
+        .chat-box {
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid #D8DDD6;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            min-height: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .mesaj { margin-bottom: 16px; }
+        .mesaj.kullanici { text-align: right; }
+        .mesaj.kullanici span {
+            background: #1F2523;
+            color: #F5F3EE;
+            padding: 10px 16px;
+            border-radius: 16px 16px 4px 16px;
+            display: inline-block;
+            max-width: 80%;
+        }
+        .mesaj.bot span {
+            background: #5F756A;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 16px 16px 16px 4px;
+            display: inline-block;
+            max-width: 80%;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #D8DDD6;
+            border-radius: 8px;
+            background: white;
+            font-size: 1rem;
+            outline: none;
+        }
+        button {
+            background: #5F756A;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover { background: #1F2523; }
+        .lead-form {
+            background: white;
+            border: 1px solid #D8DDD6;
+            border-radius: 16px;
+            padding: 24px;
+        }
+        .lead-form h3 { margin-bottom: 16px; color: #1F2523; }
+        .form-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .form-row input { flex: 1; }
+        .basari { color: #5F756A; font-weight: bold; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Beste Köken Studio</h1>
+        <span>GIS Consulting & Education</span>
+    </header>
+
+    <div class="container">
+        <div class="hero">
+            <h2>Araştırmanızdaki mekânsal veriye anlam katıyoruz.</h2>
+            <p>Tez sürecinizde GIS analizi ve haritalama desteği için benimle konuşun.</p>
+        </div>
+
+        <div class="chat-box" id="chatBox">
+            <div class="mesaj bot">
+                <span>Merhaba! Ben Beste Köken Studio'nun GIS asistanıyım. Tezinizde veya projenizde GIS analizi konusunda yardımcı olabilirim. Ne sormak istersiniz?</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="mesajInput" placeholder="Sorunuzu yazın..." />
+            <button onclick="mesajGonder()">Sor</button>
+        </div>
+
+        <div class="lead-form">
+            <h3>Proje talebi oluşturun</h3>
+            <div class="form-row">
+                <input type="text" id="isim" placeholder="Adınız Soyadınız" />
+                <input type="text" id="telefon" placeholder="Telefon Numaranız" />
+            </div>
+            <button onclick="leadKaydet()" style="width:100%">Bilgilerimi Bırak</button>
+            <p class="basari" id="basariMesaji">✓ Bilgileriniz alındı, en kısa sürede dönüş yapacağım!</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000';
+        let gecmis = [];
+
+        function mesajEkle(icerik, tip) {
+            const chatBox = document.getElementById('chatBox');
+            const div = document.createElement('div');
+            div.className = `mesaj ${tip}`;
+            const temizIcerik = icerik
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/### (.*?)(\n|$)/g, '<br><strong>$1</strong><br>')
+    .replace(/\n/g, '<br>');
+div.innerHTML = `<span>${temizIcerik}</span>`;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function mesajGonder() {
+            const input = document.getElementById('mesajInput');
+            const mesaj = input.value.trim();
+            if (!mesaj) return;
+
+            mesajEkle(mesaj, 'kullanici');
+            input.value = '';
+            gecmis.push({role: 'user', content: mesaj});
+
+            try {
+                const response = await fetch(`${API_URL}/api/sohbet`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({mesaj, gecmis})
+                });
+                const data = await response.json();
+                if (data.basari) {
+                    mesajEkle(data.cevap, 'bot');
+                    gecmis.push({role: 'assistant', content: data.cevap});
+                }
+            } catch (e) {
+                mesajEkle('Bağlantı hatası oluştu.', 'bot');
+            }
+        }
+
+        async function leadKaydet() {
+            const isim = document.getElementById('isim').value.trim();
+            const telefon = document.getElementById('telefon').value.trim();
+            if (!isim || !telefon) {
+                alert('Lütfen isim ve telefon numaranızı girin.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/leads`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({isim, telefon, mesaj: 'Web sitesi formu'})
+                });
+                const data = await response.json();
+                if (data.basari) {
+                    document.getElementById('basariMesaji').style.display = 'block';
+                }
+            } catch (e) {
+                alert('Hata oluştu, lütfen tekrar deneyin.');
+            }
+        }
+
+        document.getElementById('mesajInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') mesajGonder();
+        });
+    </script>
+</body>
+</html>

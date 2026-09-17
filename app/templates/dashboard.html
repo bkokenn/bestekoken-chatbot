@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beste Köken Studio | Yönetim Paneli</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #F5F3EE;
+            color: #1F2523;
+            min-height: 100vh;
+        }
+        header {
+            background: #1F2523;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { color: #F5F3EE; font-size: 1.4rem; }
+        header span { color: #5F756A; font-size: 0.85rem; }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        h2 { margin-bottom: 24px; font-size: 1.5rem; }
+        .istatistik {
+            background: #1F2523;
+            color: white;
+            padding: 20px 28px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: inline-block;
+        }
+        .istatistik span { font-size: 2rem; font-weight: bold; color: #5F756A; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        th {
+            background: #1F2523;
+            color: #F5F3EE;
+            padding: 14px 18px;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        td {
+            padding: 14px 18px;
+            border-bottom: 1px solid #F5F3EE;
+            font-size: 0.95rem;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #F5F3EE; }
+        .bos { text-align: center; padding: 40px; color: #5F756A; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Beste Köken Studio</h1>
+        <span>Yönetim Paneli</span>
+    </header>
+
+    <div class="container">
+        <div class="istatistik">
+            Toplam Kayıt: <span id="toplamSayi">0</span>
+        </div>
+
+        <h2>Ziyaretçi Kayıtları</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>İsim</th>
+                    <th>Telefon</th>
+                    <th>Mesaj</th>
+                    <th>Tarih</th>
+                </tr>
+            </thead>
+            <tbody id="leadTablosu">
+                <tr><td colspan="4" class="bos">Yükleniyor...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000';
+
+        async function leadleriYukle() {
+            try {
+                const response = await fetch(`${API_URL}/api/leads`);
+                const data = await response.json();
+                
+                const tbody = document.getElementById('leadTablosu');
+                document.getElementById('toplamSayi').textContent = data.leadler.length;
+
+                if (data.leadler.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="bos">Henüz kayıt yok.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.leadler.map(lead => `
+                    <tr>
+                        <td>${lead.isim}</td>
+                        <td>${lead.telefon}</td>
+                        <td>${lead.mesaj || '-'}</td>
+                        <td>${new Date(lead.tarih).toLocaleString('tr-TR')}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                document.getElementById('leadTablosu').innerHTML = 
+                    '<tr><td colspan="4" class="bos">Bağlantı hatası.</td></tr>';
+            }
+        }
+
+        // Sayfa açılınca yükle
+        leadleriYukle();
+        
+        // Her 30 saniyede otomatik yenile
+        setInterval(leadleriYukle, 30000);
+    </script>
+</body>
+</html>
