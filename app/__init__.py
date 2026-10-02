@@ -14,7 +14,7 @@ def create_app(ortam='default'):
     app.config.from_object(config[ortam])
     
     # CORS'u aç - farklı adreslerden istek kabul et
-    CORS(app, origins=app.config['CORS_ORIGINS'])
+    CORS(app)
     
     # Veritabanını başlat
     init_db(app)
